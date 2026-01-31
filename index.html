@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyScore - Theo dõi điểm học tập</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📚 StudyScore</h1>
+            <p>Theo dõi điểm học tập thông minh</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('grades')">Nhập điểm</button>
+            <button class="nav-tab" onclick="switchTab('summary')">Tổng kết</button>
+            <button class="nav-tab" onclick="switchTab('progress')">Tiến bộ</button>
+            <button class="nav-tab" onclick="switchTab('goals')">Mục tiêu</button>
+            <button class="nav-tab" onclick="switchTab('settings')">Cài đặt</button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content">
+            <!-- Tab: Nhập điểm -->
+            <div id="grades-tab" class="tab-content active">
+                <div class="semester-selector">
+                    <button class="semester-btn active" onclick="switchSemester(1)">Học kỳ 1</button>
+                    <button class="semester-btn" onclick="switchSemester(2)">Học kỳ 2</button>
+                </div>
+                <div id="subjects-container" class="subject-grid"></div>
+            </div>
+
+            <!-- Tab: Tổng kết -->
+            <div id="summary-tab" class="tab-content">
+                <div class="summary-section">
+                    <h2 style="margin-bottom: 20px;">📊 Kết quả học tập</h2>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="summary-label">Điểm TB Học kỳ 1</div>
+                            <div class="summary-value" id="avg-sem1">0.0</div>
+                            <div class="ranking-badge" id="rank-sem1">Chưa có dữ liệu</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Điểm TB Học kỳ 2</div>
+                            <div class="summary-value" id="avg-sem2">0.0</div>
+                            <div class="ranking-badge" id="rank-sem2">Chưa có dữ liệu</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Điểm TB Cả năm</div>
+                            <div class="summary-value" id="avg-year">0.0</div>
+                            <div class="ranking-badge" id="rank-year">Chưa có dữ liệu</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 30px; border-radius: 15px;">
+                    <h3 style="margin-bottom: 20px;">📈 Biểu đồ điểm theo môn</h3>
+                    <div class="semester-selector" style="margin-bottom: 20px;">
+                        <button class="semester-btn active" onclick="switchSemester(1); updateSubjectChart();">Học kỳ 1</button>
+                        <button class="semester-btn" onclick="switchSemester(2); updateSubjectChart();">Học kỳ 2</button>
+                    </div>
+                    <div id="subject-chart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Tiến bộ -->
+            <div id="progress-tab" class="tab-content">
+                <div style="background: white; padding: 30px; border-radius: 15px;">
+                    <h2 style="margin-bottom: 20px;">📈 So sánh tiến bộ</h2>
+                    <div id="progress-comparison" class="comparison-container"></div>
+                    <div id="progress-details" style="margin-top: 30px;"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Mục tiêu -->
+            <div id="goals-tab" class="tab-content">
+                <div style="background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px;">
+                    <h2 style="margin-bottom: 20px;">🎯 Đặt mục tiêu</h2>
+                    <div style="display: flex; gap: 10px; max-width: 400px;">
+                        <input type="number" id="goal-input" placeholder="Nhập điểm mục tiêu (0-10)" 
+                               min="0" max="10" step="0.1" style="flex: 1; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 16px;">
+                        <button onclick="setGoal()" style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">Đặt mục tiêu</button>
+                    </div>
+                    <div id="goal-status" style="margin-top: 20px;"></div>
+                </div>
+
+                <div style="background: white; padding: 30px; border-radius: 15px;">
+                    <h3 style="margin-bottom: 20px;">⚠️ Cảnh báo & Khuyến nghị</h3>
+                    <div class="semester-selector" style="margin-bottom: 20px;">
+                        <button class="semester-btn active" onclick="switchSemester(1); updateGoals();">Học kỳ 1</button>
+                        <button class="semester-btn" onclick="switchSemester(2); updateGoals();">Học kỳ 2</button>
+                    </div>
+                    <div id="warnings-container"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Cài đặt -->
+            <div id="settings-tab" class="tab-content">
+                <div style="background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px;">
+                    <h2 style="margin-bottom: 20px;">⚙️ Cài đặt môn học</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Chọn các môn học bạn đang theo học:</p>
+                    <div id="subject-selector" class="subject-selector"></div>
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button onclick="selectAllSubjects()" style="padding: 10px 20px; background: #51cf66; color: white; border: none; border-radius: 8px; cursor: pointer;">✅ Chọn tất cả</button>
+                        <button onclick="deselectAllSubjects()" style="padding: 10px 20px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer;">❌ Bỏ chọn tất cả</button>
+                        <button onclick="saveSubjectSettings()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Lưu cài đặt</button>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 30px; border-radius: 15px;">
+                    <h2 style="margin-bottom: 20px;">🗑️ Quản lý dữ liệu</h2>
+                    <button onclick="resetAllData()" style="padding: 12px 30px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                        ⚠️ Xóa tất cả dữ liệu
+                    </button>
+                    <p style="margin-top: 10px; color: #999; font-size: 14px;">
+                        Cảnh báo: Hành động này sẽ xóa toàn bộ điểm số và không thể hoàn tác!
+                    </p>
+                </div>
+
+                <div style="background: white; padding: 30px; border-radius: 15px; margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px;">ℹ️ Thông tin</h3>
+                    <p style="color: #666; line-height: 1.6;">
+                        <strong>StudyScore v1.0</strong><br>
+                        Ứng dụng theo dõi điểm học tập dành cho học sinh THPT<br>
+                        Dữ liệu được lưu trữ local trên trình duyệt của bạn
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
