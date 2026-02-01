@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyScore - Theo dõi điểm học tập</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --primary-dark: #EE5A52;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --success: #95E1D3;
+            --warning: #F38181;
+            --bg-main: #FFF9F0;
+            --bg-card: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-light: #7F8C8D;
+            --shadow: rgba(255, 107, 107, 0.15);
+            --shadow-hover: rgba(255, 107, 107, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Decorative Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+            opacity: 0.1;
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -50%;
+            left: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            opacity: 0.1;
+            z-index: -1;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(10%, 10%) rotate(5deg); }
+            50% { transform: translate(5%, 20%) rotate(-5deg); }
+            75% { transform: translate(-5%, 10%) rotate(3deg); }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -2px;
+        }
+
+        .tagline {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: slideIn 0.6s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px var(--shadow-hover);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-rank {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .rank-xuatsac { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .rank-gioi { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .rank-kha { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .rank-trungbinh { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+        .rank-yeu { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            animation: slideIn 0.6s ease-out 0.3s both;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Lexend', sans-serif;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-dark);
+            border: 2px solid var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        select {
+            padding: 14px 20px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Lexend', sans-serif;
+            cursor: pointer;
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Subjects Grid */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .subject-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: all 0.3s ease;
+            animation: scaleIn 0.5s ease-out both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subject-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent 0%, var(--primary) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .subject-card:hover::before {
+            opacity: 0.05;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 50px var(--shadow-hover);
+        }
+
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .subject-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .subject-avg {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .score-inputs {
+            display: grid;
+            gap: 12px;
+        }
+
+        .score-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            padding: 10px 14px;
+            border: 2px solid #E8E8E8;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Lexend', sans-serif;
+            transition: all 0.3s ease;
+            background: #FAFAFA;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.1);
+        }
+
+        .subject-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #F38181, #F76B8A);
+            color: white;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 30px var(--shadow);
+            margin-bottom: 40px;
+            animation: slideIn 0.6s ease-out 0.4s both;
+        }
+
+        .chart-header {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: var(--text-dark);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            position: relative;
+            background: var(--bg-card);
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 40px;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlide 0.4s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: var(--text-dark);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input {
+            width: 100%;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+            transform: rotate(90deg);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            animation: scaleIn 0.6s ease-out;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .empty-state p {
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .subjects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .controls > * {
+                width: 100%;
+            }
+        }
+
+        /* Animations for list items */
+        .subject-card:nth-child(1) { animation-delay: 0.1s; }
+        .subject-card:nth-child(2) { animation-delay: 0.2s; }
+        .subject-card:nth-child(3) { animation-delay: 0.3s; }
+        .subject-card:nth-child(4) { animation-delay: 0.4s; }
+        .subject-card:nth-child(5) { animation-delay: 0.5s; }
+        .subject-card:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 StudyScore</h1>
+            <p class="tagline">Theo dõi điểm học tập thông minh cho học sinh THPT</p>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">Điểm trung bình</div>
+                <div class="stat-value" id="avgScore">0.0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Xếp loại học lực</div>
+                <div class="stat-rank" id="ranking">Chưa có dữ liệu</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Số môn học</div>
+                <div class="stat-value" id="subjectCount">0</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" onclick="openAddSubjectModal()">➕ Thêm môn học</button>
+            <select id="semesterSelect" onchange="changeSemester()">
+                <option value="hk1">Học kỳ 1</option>
+                <option value="hk2">Học kỳ 2</option>
+                <option value="year">Cả năm</option>
+            </select>
+            <button class="btn btn-secondary" onclick="exportData()">💾 Xuất dữ liệu</button>
+            <button class="btn btn-secondary" onclick="resetData()">🔄 Đặt lại</button>
+        </div>
+
+        <!-- Subjects Grid -->
+        <div id="subjectsContainer"></div>
+
+        <!-- Chart Section -->
+        <div class="chart-section">
+            <h2 class="chart-header">📊 Biểu đồ tiến bộ học tập</h2>
+            <canvas id="progressChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div id="addSubjectModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeAddSubjectModal()">×</button>
+            <h2 class="modal-header">Thêm môn học mới</h2>
+            <div class="form-group">
+                <label>Tên môn học</label>
+                <input type="text" id="newSubjectName" placeholder="Ví dụ: Toán, Văn, Anh...">
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addSubject()">Thêm môn</button>
+        </div>
+    </div>
+
+    <script>
+        // Data Structure
+        let currentSemester = 'hk1';
+        let data = {
+            hk1: {},
+            hk2: {},
+            year: {}
+        };
+
+        // Default subjects
+        const defaultSubjects = ['Toán', 'Văn', 'Anh', 'Lý', 'Hóa', 'Sinh', 'Sử', 'Địa', 'GDCD'];
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('studyScoreData');
+            if (saved) {
+                data = JSON.parse(saved);
+            } else {
+                // Initialize with default subjects for HK1
+                defaultSubjects.forEach(subject => {
+                    data.hk1[subject] = {
+                        mieng: [],
+                        muoiLam: [],
+                        motTiet: [],
+                        giuaKy: null,
+                        cuoiKy: null
+                    };
+                });
+                saveData();
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('studyScoreData', JSON.stringify(data));
+        }
+
+        // Calculate average for a subject
+        function calculateSubjectAverage(subject) {
+            const scores = data[currentSemester][subject];
+            if (!scores) return 0;
+
+            let totalPoints = 0;
+            let totalWeight = 0;
+
+            // Mieng (weight 1)
+            if (scores.mieng.length > 0) {
+                const miengAvg = scores.mieng.reduce((a, b) => a + b, 0) / scores.mieng.length;
+                totalPoints += miengAvg * 1;
+                totalWeight += 1;
+            }
+
+            // 15 phut (weight 1)
+            if (scores.muoiLam.length > 0) {
+                const muoiLamAvg = scores.muoiLam.reduce((a, b) => a + b, 0) / scores.muoiLam.length;
+                totalPoints += muoiLamAvg * 1;
+                totalWeight += 1;
+            }
+
+            // 1 tiet (weight 2)
+            if (scores.motTiet.length > 0) {
+                const motTietAvg = scores.motTiet.reduce((a, b) => a + b, 0) / scores.motTiet.length;
+                totalPoints += motTietAvg * 2;
+                totalWeight += 2;
+            }
+
+            // Giua ky (weight 2)
+            if (scores.giuaKy !== null && scores.giuaKy !== '') {
+                totalPoints += parseFloat(scores.giuaKy) * 2;
+                totalWeight += 2;
+            }
+
+            // Cuoi ky (weight 3)
+            if (scores.cuoiKy !== null && scores.cuoiKy !== '') {
+                totalPoints += parseFloat(scores.cuoiKy) * 3;
+                totalWeight += 3;
+            }
+
+            return totalWeight > 0 ? (totalPoints / totalWeight).toFixed(1) : 0;
+        }
+
+        // Calculate overall average
+        function calculateOverallAverage() {
+            const subjects = Object.keys(data[currentSemester]);
+            if (subjects.length === 0) return 0;
+
+            let total = 0;
+            let count = 0;
+
+            subjects.forEach(subject => {
+                const avg = parseFloat(calculateSubjectAverage(subject));
+                if (avg > 0) {
+                    total += avg;
+                    count++;
+                }
+            });
+
+            return count > 0 ? (total / count).toFixed(1) : 0;
+        }
+
+        // Get ranking
+        function getRanking(avg) {
+            if (avg >= 9.0) return { text: 'Xuất sắc', class: 'rank-xuatsac' };
+            if (avg >= 8.0) return { text: 'Giỏi', class: 'rank-gioi' };
+            if (avg >= 6.5) return { text: 'Khá', class: 'rank-kha' };
+            if (avg >= 5.0) return { text: 'Trung bình', class: 'rank-trungbinh' };
+            if (avg > 0) return { text: 'Yếu', class: 'rank-yeu' };
+            return { text: 'Chưa có dữ liệu', class: '' };
+        }
+
+        // Render subjects
+        function renderSubjects() {
+            const container = document.getElementById('subjectsContainer');
+            const subjects = Object.keys(data[currentSemester]);
+
+            if (subjects.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <h3>Chưa có môn học nào</h3>
+                        <p>Bắt đầu bằng cách thêm môn học đầu tiên của bạn!</p>
+                        <button class="btn btn-primary" onclick="openAddSubjectModal()">➕ Thêm môn học</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const gridHtml = subjects.map((subject, index) => {
+                const scores = data[currentSemester][subject];
+                const avg = calculateSubjectAverage(subject);
+
+                return `
+                    <div class="subject-card">
+                        <div class="subject-header">
+                            <div class="subject-name">${subject}</div>
+                            <div class="subject-avg">${avg}</div>
+                        </div>
+                        <div class="score-inputs">
+                            <div class="score-row">
+                                <span class="score-label">Điểm miệng</span>
+                                <input type="number" min="0" max="10" step="0.5" 
+                                    placeholder="Nhập điểm..." 
+                                    data-subject="${subject}" 
+                                    data-type="mieng"
+                                    class="score-input-multiple">
+                            </div>
+                            <div class="score-row">
+                                <span class="score-label">Điểm 15 phút</span>
+                                <input type="number" min="0" max="10" step="0.5" 
+                                    placeholder="Nhập điểm..." 
+                                    data-subject="${subject}" 
+                                    data-type="muoiLam"
+                                    class="score-input-multiple">
+                            </div>
+                            <div class="score-row">
+                                <span class="score-label">Điểm 1 tiết</span>
+                                <input type="number" min="0" max="10" step="0.5" 
+                                    placeholder="Nhập điểm..." 
+                                    data-subject="${subject}" 
+                                    data-type="motTiet"
+                                    class="score-input-multiple">
+                            </div>
+                            <div class="score-row">
+                                <span class="score-label">Điểm giữa kỳ</span>
+                                <input type="number" min="0" max="10" step="0.5" 
+                                    value="${scores.giuaKy || ''}" 
+                                    placeholder="Nhập điểm..." 
+                                    data-subject="${subject}" 
+                                    data-type="giuaKy"
+                                    class="score-input-single">
+                            </div>
+                            <div class="score-row">
+                                <span class="score-label">Điểm cuối kỳ</span>
+                                <input type="number" min="0" max="10" step="0.5" 
+                                    value="${scores.cuoiKy || ''}" 
+                                    placeholder="Nhập điểm..." 
+                                    data-subject="${subject}" 
+                                    data-type="cuoiKy"
+                                    class="score-input-single">
+                            </div>
+                        </div>
+                        <div class="subject-actions">
+                            <button class="btn btn-small btn-delete" data-subject="${subject}" class="delete-btn">🗑️ Xóa môn</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = '<div class="subjects-grid">' + gridHtml + '</div>';
+            
+            // Attach event listeners after rendering
+            attachEventListeners();
+        }
+
+        // Attach event listeners to inputs and buttons
+        function attachEventListeners() {
+            // Multiple score inputs (mieng, muoiLam, motTiet)
+            document.querySelectorAll('.score-input-multiple').forEach(input => {
+                input.addEventListener('change', function() {
+                    const subject = this.dataset.subject;
+                    const type = this.dataset.type;
+                    const value = this.value;
+                    
+                    if (value) {
+                        addScore(subject, type, value);
+                        this.value = '';
+                    }
+                });
+            });
+
+            // Single score inputs (giuaKy, cuoiKy)
+            document.querySelectorAll('.score-input-single').forEach(input => {
+                input.addEventListener('change', function() {
+                    const subject = this.dataset.subject;
+                    const type = this.dataset.type;
+                    const value = this.value;
+                    
+                    setScore(subject, type, value);
+                });
+            });
+
+            // Delete buttons
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const subject = this.dataset.subject;
+                    deleteSubject(subject);
+                });
+            });
+        }
+
+        // Add score to array (for mieng, muoiLam, motTiet)
+        function addScore(subject, type, value) {
+            value = parseFloat(value);
+            if (isNaN(value) || value < 0 || value > 10) return;
+            
+            data[currentSemester][subject][type].push(value);
+            saveData();
+            updateStats();
+            renderChart();
+        }
+
+        // Set score (for giuaKy, cuoiKy)
+        function setScore(subject, type, value) {
+            if (value === '') {
+                data[currentSemester][subject][type] = null;
+            } else {
+                value = parseFloat(value);
+                if (isNaN(value) || value < 0 || value > 10) return;
+                data[currentSemester][subject][type] = value;
+            }
+            saveData();
+            renderSubjects();
+            updateStats();
+            renderChart();
+        }
+
+        // Update stats
+        function updateStats() {
+            const avg = calculateOverallAverage();
+            const ranking = getRanking(parseFloat(avg));
+            const subjectCount = Object.keys(data[currentSemester]).length;
+
+            document.getElementById('avgScore').textContent = avg;
+            document.getElementById('ranking').textContent = ranking.text;
+            document.getElementById('ranking').className = 'stat-rank ' + ranking.class;
+            document.getElementById('subjectCount').textContent = subjectCount;
+        }
+
+        // Modal functions
+        function openAddSubjectModal() {
+            document.getElementById('addSubjectModal').style.display = 'block';
+            document.getElementById('newSubjectName').value = '';
+            document.getElementById('newSubjectName').focus();
+        }
+
+        function closeAddSubjectModal() {
+            document.getElementById('addSubjectModal').style.display = 'none';
+        }
+
+        // Add subject
+        function addSubject() {
+            const name = document.getElementById('newSubjectName').value.trim();
+            if (!name) {
+                alert('Vui lòng nhập tên môn học!');
+                return;
+            }
+
+            if (data[currentSemester][name]) {
+                alert('Môn học này đã tồn tại!');
+                return;
+            }
+
+            data[currentSemester][name] = {
+                mieng: [],
+                muoiLam: [],
+                motTiet: [],
+                giuaKy: null,
+                cuoiKy: null
+            };
+
+            saveData();
+            renderSubjects();
+            updateStats();
+            renderChart();
+            closeAddSubjectModal();
+        }
+
+        // Delete subject
+        function deleteSubject(subject) {
+            if (confirm(`Bạn có chắc muốn xóa môn ${subject}?`)) {
+                delete data[currentSemester][subject];
+                saveData();
+                renderSubjects();
+                updateStats();
+                renderChart();
+            }
+        }
+
+        // Change semester
+        function changeSemester() {
+            currentSemester = document.getElementById('semesterSelect').value;
+            
+            // Initialize semester if empty
+            if (!data[currentSemester]) {
+                data[currentSemester] = {};
+            }
+            
+            renderSubjects();
+            updateStats();
+            renderChart();
+        }
+
+        // Chart
+        let chartInstance = null;
+
+        function renderChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const subjects = Object.keys(data[currentSemester]);
+            const scores = subjects.map(s => parseFloat(calculateSubjectAverage(s)));
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [{
+                        label: 'Điểm trung bình',
+                        data: scores,
+                        backgroundColor: subjects.map((_, i) => {
+                            const colors = [
+                                'rgba(255, 107, 107, 0.8)',
+                                'rgba(78, 205, 196, 0.8)',
+                                'rgba(255, 230, 109, 0.8)',
+                                'rgba(149, 225, 211, 0.8)',
+                                'rgba(243, 129, 129, 0.8)'
+                            ];
+                            return colors[i % colors.length];
+                        }),
+                        borderColor: subjects.map((_, i) => {
+                            const colors = [
+                                'rgba(255, 107, 107, 1)',
+                                'rgba(78, 205, 196, 1)',
+                                'rgba(255, 230, 109, 1)',
+                                'rgba(149, 225, 211, 1)',
+                                'rgba(243, 129, 129, 1)'
+                            ];
+                            return colors[i % colors.length];
+                        }),
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: {
+                                font: {
+                                    family: 'Lexend',
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    family: 'Lexend',
+                                    size: 12,
+                                    weight: 600
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Export data
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'studyscore-backup.json';
+            link.click();
+        }
+
+        // Reset data
+        function resetData() {
+            if (confirm('⚠️ Bạn có chắc muốn xóa TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
+                localStorage.removeItem('studyScoreData');
+                data = { hk1: {}, hk2: {}, year: {} };
+                renderSubjects();
+                updateStats();
+                renderChart();
+            }
+        }
+
+        // Click outside modal to close
+        window.onclick = function(event) {
+            const modal = document.getElementById('addSubjectModal');
+            if (event.target === modal) {
+                closeAddSubjectModal();
+            }
+        }
+
+        // Enter key to add subject
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('newSubjectName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addSubject();
+                }
+            });
+        });
+
+        // Initialize app
+        loadData();
+        renderSubjects();
+        updateStats();
+        renderChart();
+    </script>
+</body>
+</html>
